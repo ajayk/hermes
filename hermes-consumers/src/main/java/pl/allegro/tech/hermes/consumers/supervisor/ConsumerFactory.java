@@ -15,18 +15,19 @@ import pl.allegro.tech.hermes.consumers.consumer.converter.MessageConverterResol
 import pl.allegro.tech.hermes.consumers.consumer.offset.OffsetQueue;
 import pl.allegro.tech.hermes.consumers.consumer.rate.ConsumerRateLimitSupervisor;
 import pl.allegro.tech.hermes.consumers.consumer.rate.SerialConsumerRateLimiter;
-import pl.allegro.tech.hermes.consumers.consumer.rate.calculator.OutputRateCalculator;
+import pl.allegro.tech.hermes.consumers.consumer.rate.calculator.OutputRateCalculatorFactory;
 import pl.allegro.tech.hermes.consumers.consumer.receiver.ReceiverFactory;
 import pl.allegro.tech.hermes.consumers.consumer.sender.MessageBatchSenderFactory;
 import pl.allegro.tech.hermes.domain.topic.TopicRepository;
 import pl.allegro.tech.hermes.tracker.consumers.Trackers;
 
 import javax.inject.Inject;
+import java.time.Clock;
 
 public class ConsumerFactory {
 
     private final ConsumerRateLimitSupervisor consumerRateLimitSupervisor;
-    private final OutputRateCalculator outputRateCalculator;
+    private final OutputRateCalculatorFactory outputRateCalculatorFactory;
     private final ReceiverFactory messageReceiverFactory;
     private final HermesMetrics hermesMetrics;
     private final ConfigFactory configFactory;
@@ -39,13 +40,14 @@ public class ConsumerFactory {
     private final MessageBatchSenderFactory batchSenderFactory;
     private final OffsetQueue offsetQueue;
     private final ConsumerAuthorizationHandler consumerAuthorizationHandler;
+    private final Clock clock;
 
     @Inject
     public ConsumerFactory(ReceiverFactory messageReceiverFactory,
                            HermesMetrics hermesMetrics,
                            ConfigFactory configFactory,
                            ConsumerRateLimitSupervisor consumerRateLimitSupervisor,
-                           OutputRateCalculator outputRateCalculator,
+                           OutputRateCalculatorFactory outputRateCalculatorFactory,
                            Trackers trackers,
                            ConsumerMessageSenderFactory consumerMessageSenderFactory,
                            TopicRepository topicRepository,
@@ -54,13 +56,14 @@ public class ConsumerFactory {
                            MessageContentWrapper messageContentWrapper,
                            MessageBatchSenderFactory batchSenderFactory,
                            OffsetQueue offsetQueue,
-                           ConsumerAuthorizationHandler consumerAuthorizationHandler) {
+                           ConsumerAuthorizationHandler consumerAuthorizationHandler,
+                           Clock clock) {
 
         this.messageReceiverFactory = messageReceiverFactory;
         this.hermesMetrics = hermesMetrics;
         this.configFactory = configFactory;
         this.consumerRateLimitSupervisor = consumerRateLimitSupervisor;
-        this.outputRateCalculator = outputRateCalculator;
+        this.outputRateCalculatorFactory = outputRateCalculatorFactory;
         this.trackers = trackers;
         this.consumerMessageSenderFactory = consumerMessageSenderFactory;
         this.topicRepository = topicRepository;
@@ -70,6 +73,7 @@ public class ConsumerFactory {
         this.batchSenderFactory = batchSenderFactory;
         this.offsetQueue = offsetQueue;
         this.consumerAuthorizationHandler = consumerAuthorizationHandler;
+        this.clock = clock;
     }
 
     Consumer createConsumer(Subscription subscription) {
@@ -86,8 +90,8 @@ public class ConsumerFactory {
                     subscription,
                     topic);
         } else {
-            SerialConsumerRateLimiter consumerRateLimiter = new SerialConsumerRateLimiter(subscription, outputRateCalculator, hermesMetrics,
-                    consumerRateLimitSupervisor);
+            SerialConsumerRateLimiter consumerRateLimiter = new SerialConsumerRateLimiter(subscription,
+                    outputRateCalculatorFactory, hermesMetrics, consumerRateLimitSupervisor, clock);
 
             return new SerialConsumer(
                     messageReceiverFactory,
