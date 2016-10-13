@@ -17,5 +17,6 @@ public class Gauges {
             JMX_PREFIX = "jmx",
 
             THREADS = "threads",
-            OUTPUT_RATE = "output-rate." + GROUP + "." + TOPIC + "." + SUBSCRIPTION;
+            OUTPUT_RATE = "output-rate." + GROUP + "." + TOPIC + "." + SUBSCRIPTION,
+            MAX_RATE_CALCULATION_DURATION = "consumers-rate.calculation.duration";
 }
