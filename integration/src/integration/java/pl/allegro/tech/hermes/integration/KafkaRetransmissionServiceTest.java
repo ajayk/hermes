@@ -2,6 +2,8 @@ package pl.allegro.tech.hermes.integration;
 
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Multimaps;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import pl.allegro.tech.hermes.api.ContentType;
@@ -20,17 +22,19 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import static com.jayway.awaitility.Awaitility.await;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.summingLong;
-import static javax.ws.rs.core.Response.Status.Family.SUCCESSFUL;
 import static pl.allegro.tech.hermes.api.PatchData.patchData;
 import static pl.allegro.tech.hermes.integration.env.SharedServices.services;
 import static pl.allegro.tech.hermes.integration.test.HermesAssertions.assertThat;
 import static pl.allegro.tech.hermes.test.helper.message.TestMessage.simpleMessages;
 
 public class KafkaRetransmissionServiceTest extends IntegrationTest {
+
+    private static final Logger logger = LoggerFactory.getLogger(KafkaRetransmissionServiceTest.class);
 
     private RemoteServiceEndpoint remoteService;
     private final AvroUser user = new AvroUser();
@@ -144,9 +148,11 @@ public class KafkaRetransmissionServiceTest extends IntegrationTest {
     private void sendMessagesOnTopic(Topic topic, int n) {
         remoteService.expectMessages(simpleMessages(n));
         Arrays.stream(simpleMessages(n)).forEach(message ->
-            await().atMost(5, TimeUnit.SECONDS).until(() -> assertThat(
-                    publisher.publish(topic.getQualifiedName(), message.body()).getStatusInfo().getFamily()).isEqualTo(SUCCESSFUL))
-        );
+            await().atMost(3, SECONDS).pollDelay(300, MILLISECONDS).until(() -> {
+                Response response = publisher.publish(topic.getQualifiedName(), message.body());
+                logger.info(response.readEntity(String.class));
+                assertThat(response).hasStatus(Response.Status.CREATED);
+        }));
         remoteService.waitUntilReceived();
         remoteService.reset();
     }
