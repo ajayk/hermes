@@ -18,9 +18,13 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
+import static com.jayway.awaitility.Awaitility.await;
 import static java.util.stream.Collectors.summingLong;
+import static javax.ws.rs.core.Response.Status.Family.SUCCESSFUL;
 import static pl.allegro.tech.hermes.api.PatchData.patchData;
 import static pl.allegro.tech.hermes.integration.env.SharedServices.services;
 import static pl.allegro.tech.hermes.integration.test.HermesAssertions.assertThat;
@@ -139,9 +143,10 @@ public class KafkaRetransmissionServiceTest extends IntegrationTest {
 
     private void sendMessagesOnTopic(Topic topic, int n) {
         remoteService.expectMessages(simpleMessages(n));
-        for (TestMessage message : simpleMessages(n)) {
-            publisher.publish(topic.getQualifiedName(), message.body());
-        }
+        Arrays.stream(simpleMessages(n)).forEach(message ->
+            await().atMost(5, TimeUnit.SECONDS).until(() -> assertThat(
+                    publisher.publish(topic.getQualifiedName(), message.body()).getStatusInfo().getFamily()).isEqualTo(SUCCESSFUL))
+        );
         remoteService.waitUntilReceived();
         remoteService.reset();
     }
