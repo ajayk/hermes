@@ -4,8 +4,7 @@ language: java
 
 install: ./gradlew assemble
 script:
-  - "./gradlew check -Ptests.timeout.multiplier=3"
-  - "./gradlew -Ptests.timeout.multiplier=3 integrationTest -i"
+  - "./gradlew -Ptests.timeout.multiplier=3 integrationTest --tests pl.allegro.tech.hermes.integration.KafkaRetransmissionServiceTest.shouldMoveOffsetInDryRunModeForTopicsMigratedToAvro -i"
 
 jdk:
   - oraclejdk8

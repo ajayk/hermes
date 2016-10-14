@@ -168,6 +168,9 @@ public class KafkaSingleThreadedMessageReceiver implements MessageReceiver {
                     partitionOffset.getKafkaTopicName().asString(),
                     partitionOffset.getPartition());
 
+            logger.info("Committing for topic {} and partition {} offset: {}",
+                    partitionOffset.getKafkaTopicName().asString(), topicAndPartition.partition(), partitionOffset.getOffset());
+
             if (consumer.position(topicAndPartition) >= partitionOffset.getOffset()) {
                 offsetsData.put(topicAndPartition, new OffsetAndMetadata(partitionOffset.getOffset()));
             }
