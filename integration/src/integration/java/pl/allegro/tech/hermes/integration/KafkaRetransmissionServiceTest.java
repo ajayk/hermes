@@ -2,8 +2,6 @@ package pl.allegro.tech.hermes.integration;
 
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Multimaps;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import pl.allegro.tech.hermes.api.ContentType;
@@ -33,8 +31,6 @@ import static pl.allegro.tech.hermes.integration.test.HermesAssertions.assertTha
 import static pl.allegro.tech.hermes.test.helper.message.TestMessage.simpleMessages;
 
 public class KafkaRetransmissionServiceTest extends IntegrationTest {
-
-    private static final Logger logger = LoggerFactory.getLogger(KafkaRetransmissionServiceTest.class);
 
     private RemoteServiceEndpoint remoteService;
     private final AvroUser user = new AvroUser();
@@ -97,7 +93,7 @@ public class KafkaRetransmissionServiceTest extends IntegrationTest {
         remoteService.makeSureNoneReceived();
     }
 
-    @Test
+    @Test(enabled = false)
     public void shouldMoveOffsetInDryRunModeForTopicsMigratedToAvro() throws InterruptedException, IOException {
         // given
         String subscription = "subscription";
@@ -150,7 +146,6 @@ public class KafkaRetransmissionServiceTest extends IntegrationTest {
         Arrays.stream(simpleMessages(n)).forEach(message ->
             await().atMost(3, SECONDS).pollDelay(300, MILLISECONDS).until(() -> {
                 Response response = publisher.publish(topic.getQualifiedName(), message.body());
-                logger.info(response.readEntity(String.class));
                 assertThat(response).hasStatus(Response.Status.CREATED);
         }));
         remoteService.waitUntilReceived();
