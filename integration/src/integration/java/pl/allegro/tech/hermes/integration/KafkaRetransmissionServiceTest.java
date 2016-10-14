@@ -111,7 +111,7 @@ public class KafkaRetransmissionServiceTest extends IntegrationTest {
         operations.saveSchema(topic, user.getSchemaAsString());
         operations.updateTopic("resetOffsetGroup", "migratedTopicDryRun", patch);
 
-        Thread.sleep(10000);
+        Thread.sleep(120000);
         sendAvroMessageOnTopic(topic, user.asTestMessage());
         wait.untilConsumerCommitsOffset();
 
